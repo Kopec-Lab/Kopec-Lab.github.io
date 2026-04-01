@@ -2,12 +2,12 @@
 # Site settings
 # -----------------------------------------------------------------------------
 
-title: Dr. Wojciech Kopec Lab # the website title (if blank, full name will be used instead)
+title: Computational Biophysics of Ion Channels and Membranes # the website title (if blank, full name will be used instead)
 first_name: Wojciech
 middle_name:  
 last_name: Kopec
 email: w.kopec@qmul.ac.uk
-description: Computational Biophysics of Ion Channels and Membranes
+description: Dr. Wojciech Kopec lab
 footer_text: > 
   Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
   Photos from <a href="https://unsplash.com" target="_blank">Unsplash</a>.
