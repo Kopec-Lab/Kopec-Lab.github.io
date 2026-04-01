@@ -9,8 +9,10 @@ profile:
   image: wk-group-2024.jpg
   image_circular: false # crops the image to make it circular
   more_info: >
+    <p>Department of Chemistry</p>
+    <p>Queen Mary University of London</p>		
     <p>Joseph Priestley Building, Room G.06</p>
-    <p>Department of Chemistry, Mile End Road</p>
+    <p>327 Mile End Road</p>
     <p>E1 4NS, London, UK</p>
 
 news: true # includes a list of news items
