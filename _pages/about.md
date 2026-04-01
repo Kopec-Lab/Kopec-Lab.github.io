@@ -14,8 +14,11 @@ profile:
     <p>E1 4NS, London, UK</p>
 
 news: true # includes a list of news items
-selected_papers: true # includes a list of papers marked as "selected={true}"
+selected_papers: false # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
+
+nav: true
+nav_order: 1
 ---
 
 We are a group of computational biophycists, focusing on Molecular Dynamics (MD) based Computational Electrophysiology simulations of ion channels and membranes. The overall goal is to understand these molecular machines and ion transport in biology on the molecular level, and help designing their small molecule regulators. You'll find here information about current projects, team members, publications, code and more.
