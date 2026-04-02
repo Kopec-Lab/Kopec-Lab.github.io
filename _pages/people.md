@@ -1,4 +1,4 @@
---
+---
 layout: page
 permalink: /people/
 title: people
