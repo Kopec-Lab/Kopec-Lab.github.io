@@ -21,7 +21,7 @@ social: true # includes social icons at the bottom of the page
 
 ---
 
-We are a group of computational biophycists, focusing on Molecular Dynamics (MD) based Computational Electrophysiology simulations of ion channels and membranes. The overall goal is to understand these molecular machines and ion transport in biology on the molecular level, and help designing their small molecule regulators. You'll find here information about current projects, team members, publications, code and more.
+We are a group of computational biophysicists, focusing on Molecular Dynamics (MD) based Computational Electrophysiology simulations of ion channels. The overall goal is to understand these molecular machines and ion transport on the molecular level, and help designing small molecule modulators of ion channels. Other areas of interest include interactions of small and large molecules with lipid membranes and intrinsic membrane properties. You'll find here information about current projects, team members, publications, code and more.
 
 <div style="display: flex; gap: 12px; margin: 24px 0; justify-content: center; align-items: center;">
   <div style="flex: 1;">
