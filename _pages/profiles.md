@@ -25,5 +25,6 @@ profiles:
    image: ivan.jpeg
    content: about_ivan.md
    image_circular: false # crops the image to make it circular
+
 ---
 
