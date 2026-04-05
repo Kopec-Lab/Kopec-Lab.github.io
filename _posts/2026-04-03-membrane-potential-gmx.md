@@ -1,9 +1,9 @@
 ---
 layout: post
 title: Calculating membrane potential from GROMACS trajectories
-date: 2026-04-03 12:00:00+0000
+date: 2026-04-05 12:00:00+0000
 description: How the -correct flag works, its mathematical basis, and what the tool actually computes in simulations with an applied electric field.
-tags: [membrane-potential, GROMACS, electrostatics, molecular-dynamics]
+tags: [membrane potential, GROMACS, electrostatics, molecular dynamics, computational electrophysiology]
 categories: methods
 related_posts: false
 toc:
@@ -11,11 +11,208 @@ toc:
 
 ---
 
-## Calculating membrane potential from GROMACS trajectories with gmx potential (and a new tool)
+### Intro
+
+If you have ever run an MD simulation of a lipid membrane, one of the analyses likely included calculating the membrane potential. In GROMACS, this is conveniently done using 'gmx potential'. However, what you likely observed was an asymmetric potential profile, varying wildly depending on the number of slices used for integration and the simulation length. You may then have tried the -correct flag in the same tool, which appears to fix these issues — although it is still debated whether, and under what circumstances, it should be used. Below, I present some thoughts on this, together with a new method for calculating the membrane potential.
+
+### The problem
+
+When computing the electrostatic potential from an MD simulation, the standard recipe is:
+
+1. Divide the simulation box into thin slices along one axis (typically Z)
+2. Compute the charge density rho(z) in each slice
+3. Integrate rho(z) twice to obtain the potential psi(z) via the Poisson equation
+
+In the classical form (Eq. 2 in Gurtovenko 2009), the boundary conditions are psi(0) = 0 and E(0) = 0, and the integration proceeds from z = 0 to z = L (the box length):
+
+```
+E(z)   = (1/epsilon_0) * integral_0^z rho(z') dz'
+psi(z) = -integral_0^z E(z') dz'
+```
+
+For a symmetric POPC bilayer (centered so the membrane is in the middle of the box and water is at the edges), this approach produces potential profiles that are **strongly dependent on the number of slices**, with large asymmetries that vary erratically. For example, in my hands, applying gmx potential without the -correct flag to a trajectory of a symmetric POPC bilayer produced:
+
+```
+Slices   Peak (V)   Asymmetry psi(L)-psi(0) (V)
+  50      0.55       -0.08
+ 100      0.81       +0.47
+ 200      0.69       +0.17
+ 300      0.75       +0.25
+ 500      0.69       +0.13
+ 800      0.61       -0.00
+1000      0.65       +0.06
+```
+
+For a system that is perfectly symmetric, psi(L) should equal psi(0). Instead, the potential drop across the box fluctuates between -0.08 and +0.47 V depending on how many slices are used. The peak potential varies between 0.55 and 0.81 V. This behavior is identical in `gmx potential`.
+
+### Root cause: molecule splitting at the periodic boundary
+
+The artifact originates from how atoms are assigned to slices when the system is periodic.
+
+After centering (shifting so the bilayer center of mass is at z = L/2), each atom's z-coordinate is wrapped into [0, L) using modular arithmetic (`z % L`). This ensures all atoms fall within the box. However, **molecules that straddle the wrapping boundary at z = 0 / z = L get torn apart**: some atoms of the molecule end up near z = 0 and others near z = L.
+
+For a typical POPC/water system, approximately 400 water molecules are split this way in each frame. Consider a TIP3P water molecule at the boundary:
+
+- Before wrapping: O at z = -0.3 A, H1 at z = 0.5 A, H2 at z = 0.7 A (molecule is intact)
+- After wrapping: O at z = L - 0.3, H1 at z = 0.5, H2 at z = 0.7 (molecule is torn apart)
+
+The oxygen (charge -0.834e) is now at the right edge of the box, while the hydrogens (+0.417e each) remain at the left edge. Each split molecule creates an **artificial dipole spanning nearly the entire box**. While the total charge of each molecule is zero, its charges are now distributed across opposite ends of the integration path.
+
+When the Poisson equation is integrated from z = 0 to z = L, this artificial dipole contributes a linear drift to the potential. The magnitude of this drift depends on:
+
+1. **The number of split molecules** -- varies between frames as molecules diffuse
+2. **The exact positions of split atoms within their slices** -- changes with slice width, hence with the number of slices
+
+This is why the artifact varies erratically with the slice count: different slice widths cause the split charges to land in different bins, changing the effective artificial dipole moment and thus the potential drift.
+
+### What doesn't fix it
+
+Several intuitive approaches were tested and found to be ineffective:
+
+**Making molecules whole before wrapping.** Even when using a preprocessed trajectory where molecules are intact (e.g., via `gmx trjconv -pbc whole`), the centering step followed by `z % L` wrapping re-splits molecules at the new boundary. The artifact is identical to using a raw trajectory.
+
+**Wrapping by molecule center of mass.** Instead of wrapping individual atoms, one can shift entire molecules based on their center of mass. This keeps molecules intact but atoms of molecules near the boundary extend beyond [0, L). These out-of-range atoms must be handled somehow:
+
+- **Clipping** (placing them in the edge slice): Concentrates charge at the boundary, making the artifact much worse. At 1000 slices, the potential reached 47 V.
+- **Modulo index wrapping** (`index % n_slices`): Effectively re-splits the molecule -- the out-of-range atoms land on the opposite side. Results are identical to simple atom wrapping.
+
+**Scaling coordinates to a fixed box size.** Gurtovenko & Vattulainen recommend scaling all coordinates to the initial box size to avoid effects from box size fluctuations under NPT pressure coupling. Testing showed this has negligible effect -- the artifact is dominated by molecule splitting, not box fluctuations. The asymmetry pattern was essentially unchanged with or without scaling.
+
+**Placing the wrapping boundary through the membrane.** Moving the boundary from the water phase (where many molecules cross it) to the membrane center (where fewer cross). This made the artifact much worse, because lipid headgroups carry much larger partial charges than water, and splitting a lipid headgroup creates a correspondingly larger artificial dipole.
+
+### Fix 1: Sachs et al. correction
+
+Sachs et al. (J. Chem. Phys. 121, 10847, 2004) proposed an alternative form of the Poisson equation where the potential is constrained to be equal on both sides of the box: psi(0) = psi(L). This amounts to subtracting a linear correction term:
+
+```
+psi_Sachs(z) = psi_classical(z) - (z/L) * psi_classical(L)
+```
+
+Gurtovenko & Vattulainen (Eq. 4-11) showed that the difference between the two forms is proportional to the total dipole moment of the system. For electroneutral systems, the correction is:
+
+```
+Delta(z) = z / (epsilon_0 * V) * P_total
+```
+
+where P_total is the system dipole moment and V is the box volume.
+
+The Sachs correction eliminates the linear drift and produces stable results:
+
+```
+Slices   Peak (V)   Asymmetry (V)
+  50      0.56       -0.001
+ 100      0.58       +0.005
+ 200      0.61       +0.001
+ 300      0.63       +0.001
+ 500      0.62       +0.000
+ 800      0.61       -0.000
+1000      0.62       +0.000
+```
+
+However, it has a fundamental limitation: **it removes ALL linear drift, including any real transmembrane potential difference**. For asymmetric bilayers (e.g., POPC/POPE), the transmembrane potential is a real physical quantity that should not be subtracted. The Sachs form is therefore only appropriate for symmetric systems.
+
+### Fix 2: Dipole correction (subtracting the artifact only)
+
+An alternative approach is to compute the artificial dipole moment caused by molecule splitting and subtract only that contribution:
+
+1. For each frame, compute the dipole moment of the system with intact (unwrapped) molecules: P_whole = sum(q_i * z_i_whole)
+2. Compute the dipole moment after wrapping: P_wrapped = sum(q_i * z_i_wrapped)
+3. The artifact dipole is: P_artifact = P_wrapped - P_whole
+4. Subtract the corresponding linear potential: Delta(z) = z / (epsilon_0 * V) * P_artifact
+
+In principle, this should remove only the wrapping artifact while preserving the real transmembrane potential. In practice, testing showed this **overcorrects** -- the "whole" and "wrapped" dipole moments are not cleanly separable because the centering operation itself changes the dipole moment relative to the box origin. The corrected asymmetry was worse than uncorrected for many slice counts.
+
+### Fix 3: Fourier-space integration - our new tool, https://github.com/Kopec-Lab/membrane-potential-tool 
+
+One solution is to solve the Poisson equation in Fourier (reciprocal) space, where periodicity is built in by construction.
+
+The 1D Poisson equation in real space:
+
+```
+d^2 psi(z) / dz^2 = -rho(z) / epsilon_0
+```
+
+becomes, after Fourier transform:
+
+```
+-k^2 * psi_hat(k) = -rho_hat(k) / epsilon_0
+```
+
+which gives:
+
+```
+psi_hat(k) = rho_hat(k) / (k^2 * epsilon_0)    for k != 0
+```
+
+The k = 0 component corresponds to an arbitrary overall offset of the potential and is set to zero. The electric field is obtained similarly:
+
+```
+E_hat(k) = -i*k * psi_hat(k)
+```
+
+The inverse Fourier transform gives the real-space potential and field.
+
+This approach has several key advantages:
+
+1. **Inherently periodic.** The Fourier transform assumes the input signal is periodic. The potential automatically satisfies psi(0) = psi(L), with no need for corrections or special boundary conditions. There is no "starting point" for integration that could accumulate errors.
+
+2. **Immune to the boundary artifact.** Split molecules create charge density features at both edges of the box. In the classical method, the double integration treats these as separated by the full box length, amplifying their effect. In Fourier space, periodicity means the edges are the same point -- the charge distribution from a split molecule is treated as if the molecule were whole, because the Fourier basis functions wrap around naturally.
+
+3. **Insensitive to the number of slices.** Because there is no error accumulation from sequential integration, the result converges rapidly and varies minimally with slice count:
+
+```
+Slices   Peak (V)   Asymmetry (V)
+  50      0.65       +0.003
+ 100      0.63       +0.003
+ 200      0.64       +0.001
+ 300      0.64       +0.001
+ 500      0.63       +0.000
+ 800      0.63       +0.000
+1000      0.63       +0.000
+```
+
+The peak potential is consistent at ~0.63 V regardless of slice count, and the asymmetry is essentially zero (< 0.003 V). Compare this with the classical method's range of 0.55-0.81 V for the peak and up to 0.47 V of asymmetry.
+
+### Summary of methods
+
+| Method | Asymmetry | Peak stability | Works for asymmetric bilayers? |
+|--------|-----------|---------------|-------------------------------|
+| Classical (gmx potential) | up to 0.47 V | varies 0.55-0.81 V | yes, but with artifacts |
+| Classical + Sachs | < 0.005 V | 0.56-0.63 V | no (removes real potential drop) |
+| Classical + correct | < 0.004 V | 0.61-0.63 V | unclear (see discussion below) |
+| Classical + dipole correction | overcorrects | overcorrects | no (unreliable) |
+| **Fourier (default)** | **< 0.003 V** | **0.63-0.65 V** | **yes** |
+
+The Fourier method is the default because it is the most robust, produces consistent results regardless of slice count, and works correctly for both symmetric and asymmetric systems.
+
+---
+
+### How it works
+
+### Step 1: Charge density
+
+The box is divided into `N` slices along the chosen axis. For each trajectory frame, every atom is assigned to a slice based on its coordinate. The partial charge (from the `.tpr` file) is added to that slice. The charge density is the total charge in each slice divided by the slice volume, averaged over all frames.
+
+### Step 2: Solve the Poisson equation
+
+**Fourier method (default):** The charge density is Fourier-transformed, divided by `k^2 * epsilon_0` in reciprocal space (skipping k=0), and inverse-transformed to obtain the potential. The electric field is computed analogously using `-i*k * psi_hat(k)`.
+
+**Classical method (`-classical`):** The charge density is numerically integrated twice using the cumulative trapezoidal rule, with boundary conditions psi(0) = 0 and E(0) = 0. With `-sachs`, a linear correction term is subtracted to enforce psi(0) = psi(L).
+
+Both methods use the `gmx potential` sign convention, where the dipole potential inside the membrane is positive relative to water.
+
+### Known issues and considerations
+
+- **Centering matters**: Without `-center`, bilayer center-of-mass fluctuations smear the charge density and produce asymmetric profiles. Always use `-center` for membrane systems.
+- **Convergence**: Potential profiles require long trajectories (100+ ns for bilayers) to converge, particularly in the water region near lipid headgroups.
+- **Dielectric constant**: The calculation uses vacuum permittivity (epsilon_r = 1). The output represents the bare electrostatic potential from the explicit charge distribution, not a dielectrically screened quantity.
+- **Undulations**: For large membranes with significant undulations, the 1D slab decomposition may not accurately capture the local potential. Using small, planar bilayer patches avoids this issue.
+- **Preprocessing**: It is recommended (but not strictly necessary) to preprocess the trajectory with `gmx trjconv -pbc whole` to make molecules whole. While the Fourier method handles split molecules much better than the classical method, intact molecules produce marginally cleaner charge density profiles.
+
 
 ### What gmx potential `-correct` actually does
 
-Inspection of the GROMACS source code (`gmx_potential.cpp`) reveals that `-correct` performs **two mean subtractions** during the classical double integration:
+Inspection of the GROMACS source code reveals that `-correct` performs **two mean subtractions** during the classical double integration:
 
 1. **Before the first integration**: subtract the mean charge density from all slices that have nonzero charge density. This makes the effective total charge exactly zero, removing a constant drift term from the electric field.
 
@@ -66,7 +263,7 @@ In practice, **`-correct` behaves identically to the Sachs correction for the li
 
 ---
 
-## Simulations with applied electric field
+### Simulations with applied electric field
 
 A common approach to simulate a transmembrane voltage in MD is to apply a constant external electric field E perpendicular to the membrane (GROMACS `electric-field-z` mdp parameter). The resulting voltage is V = E * L_z, where L_z is the box length in the field direction. This section explains what the tool computes in this scenario, how to interpret the results, and what the `-efield` flag does.
 
