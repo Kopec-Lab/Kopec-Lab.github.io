@@ -16,14 +16,14 @@ toc:
 If you have ever run an MD simulation of a lipid membrane, one of the analyses likely included calculating the membrane potential. In GROMACS, this is conveniently done using 'gmx potential'. However, what you likely observed was an asymmetric potential profile, varying wildly depending on the number of slices used for integration and the simulation length (as shown below; figures are made using our simple [gplot tool](https://github.com/Kopec-Lab/gplot)). 
 
 {% include figure.liquid 
-   path="/Users/wojciechkopec/PROJECTS/WEBSITE-KOPEC-LAB/Kopec-Lab.github.io/assets/img/blog/potentials-raw-gmx.png" 
+   path="assets/img/blog/potentials-raw-gmx.png" 
    caption="Figure 1: Membrane potentials calculated by gmx potential with a different number of slices (-sl)" 
    width="80%" %}
 
 You may then have tried the -correct flag in the same tool, which appears to fix these issues, although it is still debated whether, and under what circumstances, it should be used. Below, I present some thoughts on this, together with a new method for calculating the membrane potential.
 
 {% include figure.liquid 
-   path="/Users/wojciechkopec/PROJECTS/WEBSITE-KOPEC-LAB/Kopec-Lab.github.io/assets/img/blog/potential-correct-gmx.png" 
+   path="assets/img/blog/potential-correct-gmx.png" 
    caption="Figure 2: Membrane potentials calculated by gmx potential with a different number of slices (-sl) and with the -correct flag" 
    width="80%" %}
 
@@ -167,7 +167,7 @@ The inverse Fourier transform gives the real-space potential and field.
 
 
 {% include figure.liquid 
-   path="/Users/wojciechkopec/PROJECTS/WEBSITE-KOPEC-LAB/Kopec-Lab.github.io/assets/img/blog/potential-fourier.png" 
+   path="assets/img/blog/potential-fourier.png" 
    caption="Figure 3: Membrane potential calculated by our tool with the Fourier-space integration" 
    width="80%" %}
 
@@ -359,7 +359,7 @@ When `-efield VALUE` is specified (where VALUE is E_z in V/nm, matching the GROM
 5. **Reports voltage estimates**: Both the exact V = E * L_z and the slope-based estimate are printed, along with the recovery percentage. The average reaction electric field in water is also reported and compared to the expected -E_applied.
 
 {% include figure.liquid 
-   path="/Users/wojciechkopec/PROJECTS/WEBSITE-KOPEC-LAB/Kopec-Lab.github.io/assets/img/blog/potential-fourier-efield.png" 
+   path="assets/img/blog/potential-fourier-efield.png" 
    caption="Figure 4: Membrane potential calculated by our tool with the Fourier-space integration in a system with applied electric field" 
    width="80%" %}
 
