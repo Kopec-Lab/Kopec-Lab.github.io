@@ -2,7 +2,7 @@
 layout: post
 title: Exploring how embedding mini independent research projects in computational chemistry modules influences students’ employability
 date: 2026-05-08 21:40:00+0000
-description:
+description: xxx
 tags: [Project-based education, PGCAP, UKHE]
 categories: education
 related_posts: false
@@ -10,6 +10,7 @@ toc:
   sidebar: left
 
 ---
+
 ## Main concern
 
 My core concern is that students’ opportunities to experience authentic “research-like” work in the chemistry curriculum at QMUL are currently deteriorating. At the same time, institutional and sector narratives in the UK increasingly emphasise employability, often characterised through short-term metrics that may not capture longer-run career development1 or non-linear career trajectories2,3. In my local context, colleagues and I have observed concrete curriculum changes in this direction: compression and replacement of independent research projects, including planned replacement of individual final-year projects with group work and the shrinking of postgraduate dissertation/project components (e.g., to \~30% workload in some programmes, such as Msc in AI for Drug Discovery, of which I am a Deputy Director).  This goes against the disciplinary expectations that UK HE Chemistry curricula include a major of assessed practical and project work4,5.
