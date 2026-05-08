@@ -2,7 +2,7 @@
 layout: post
 title: Exploring how embedding mini independent research projects in computational chemistry modules influences students’ employability
 date: 2026-05-08 21:40:00+0000
-description: xxx
+description: Action Research Proposal
 tags: [Project-based education, PGCAP, UKHE]
 categories: education
 related_posts: false
@@ -13,7 +13,7 @@ toc:
 
 ## Main concern
 
-My core concern is that students’ opportunities to experience authentic “research-like” work in the chemistry curriculum at QMUL are currently deteriorating. At the same time, institutional and sector narratives in the UK increasingly emphasise employability, often characterised through short-term metrics that may not capture longer-run career development1 or non-linear career trajectories2,3. In my local context, colleagues and I have observed concrete curriculum changes in this direction: compression and replacement of independent research projects, including planned replacement of individual final-year projects with group work and the shrinking of postgraduate dissertation/project components (e.g., to \~30% workload in some programmes, such as Msc in AI for Drug Discovery, of which I am a Deputy Director).  This goes against the disciplinary expectations that UK HE Chemistry curricula include a major of assessed practical and project work4,5.
+My core concern is that students’ opportunities to experience authentic “research-like” work in the chemistry curriculum at UK Universities are currently deteriorating. At the same time, institutional and sector narratives in the UK increasingly emphasise employability, often characterised through short-term metrics that may not capture longer-run career development1 or non-linear career trajectories2,3. In my local context, colleagues and I have observed concrete curriculum changes in this direction: compression and replacement of independent research projects, including planned replacement of individual final-year projects with group work and the shrinking of postgraduate dissertation/project components.  This goes against the disciplinary expectations that UK HE Chemistry curricula include a major of assessed practical and project work4,5.
 
 ​​I arrived at this concern through a structured evaluation of my practice that combined: (i) review of assessment artefacts and marking rubrics across recent iterations; (ii) scrutiny of module evaluation comments and informal student feedback (particularly around confidence, “not knowing what counts as good”, and difficulty transferring skills beyond a single assignment); (iii) reflective logs of teaching and assessment decision-making; and (iv) conversations with colleagues teaching adjacent modules about where students seem to “plateau” (for example, in formulating research questions, designing computational experiments, interpreting ambiguous outputs, and writing results beyond a template). This view aligns with my “informed observations”: that students engage well with technical content yet often struggle to connect methods to a broader investigative purpose, and that they need more repeated, structured practice in independent inquiry that resembles what chemists actually do.
 
