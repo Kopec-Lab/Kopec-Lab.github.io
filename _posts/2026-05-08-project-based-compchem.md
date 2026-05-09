@@ -61,8 +61,10 @@ Following the introduced cycle, my action research project will implement these 
     
 * I will integrate quantitative and qualitative insights with my reflective diary, identify what to keep/change, and feed this into the next cycle (next cohort/module run). I will also disseminate locally (teaching fora, practice guide) and externally (conference/journal), consistent with an action research aim of shared professional learning.
 
-**![][image1]**  
-**Figure 1\. Action Research Cycle in the context of this proposal.**
+{% include figure.liquid 
+   path="assets/img/blog/pgcap-ar.png" 
+   caption="Figure 1: Action Research Cycle in the context of this proposal" 
+   width="80%" %}
 
 ## Literature and scholarship
 
